@@ -23,16 +23,31 @@
 #   --visualize=false
 #  --num_events=4000000 \
 
+################################################
+#                   Datasets                   #
+################################################
 # shapes_6dof shapes_rotation shapes_translation
 # boxes_6dof  boxes_rotation  boxes_translation
 # poster_6dof poster_rotation poster_translation
-for DATASET in boxes_6dof; do
-  ./build/tracking_app_file \
-    --events_file="/data/datasets/dataset_ecd/${DATASET}/events.txt" \
-    --camera_params_file="/root/haste-benchmark/haste_benchmark/calib_ecd.txt" \
-    --centered_initialization=false \
-    --tracker_type=haste_correlation_star \
-    --seeds_file="/data/results/event_feature_tracking/results/seed_${DATASET}.csv" \
-    --output_file="/data/results/event_feature_tracking/results/eval_${DATASET}.txt" \
-    --visualize=false
+
+################################################
+#                   Methods                    #
+################################################
+# correlation
+# haste_correlation   haste_correlation_star
+# haste_difference    haste_difference_star
+
+for METHOD in correlation haste_correlation haste_correlation_star haste_difference  haste_difference_star; do
+  for DATASET in shapes_6dof shapes_rotation shapes_translation boxes_6dof  boxes_rotation  boxes_translation poster_6dof poster_rotation poster_translation; do
+    ./build/tracking_app_file \
+      --events_file="/data/datasets/dataset_ecd/${DATASET}/events.txt" \
+      --camera_params_file="/root/haste-benchmark/haste_benchmark/calib_ecd.txt" \
+      --centered_initialization=true \
+      --tracker_type=${METHOD} \
+      --seeds_file="/data/results/event_feature_tracking/results/seed_${DATASET}.csv" \
+      --output_file="/data/results/event_feature_tracking/${DATASET}/${METHOD}/eval.txt" \
+      --visualize=false
+  done
 done
+
+

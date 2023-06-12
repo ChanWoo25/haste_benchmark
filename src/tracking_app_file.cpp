@@ -111,6 +111,14 @@ int main(int argc, char** argv) {
   // Set recording vector.
   std::vector<TrackerState> states_recorded;
   const bool is_recording = !google::GetCommandLineFlagInfoOrDie("output_file").is_default;
+  if (is_recording)
+  {
+    const auto found = FLAGS_output_file.find_last_of("/");
+    const auto parent_dir = FLAGS_output_file.substr(0, found);
+    const auto command = std::string("mkdir -p ") + parent_dir;
+    system(command.c_str());
+    LOG(INFO) << "Command: " << command;
+  }
 
   // Tracking from seed(s).
   for (const auto& seed : seeds) {
