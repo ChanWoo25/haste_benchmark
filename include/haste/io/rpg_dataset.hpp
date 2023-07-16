@@ -9,9 +9,22 @@
 namespace haste {
 class RpgDataset {
  public:
+
   template<typename Event>
-  static inline auto loadEvents(const std::string& file_path, std::vector<Event>& events,
-                                size_t num_events = std::numeric_limits<size_t>::max()) -> bool;
+  static inline
+  auto loadEvents(
+    const std::string & file_path,
+    std::vector<Event>& events,
+    size_t num_events = std::numeric_limits<size_t>::max())
+    -> bool;
+
+  template<typename Event>
+  static inline
+  auto loadBinEvents(
+    const std::string & file_path,
+    std::vector<Event>& events)
+    -> bool;
+
   template<typename Camera>
   static inline auto loadCalibration(const std::string& file_path, Camera& camera) -> bool;
 

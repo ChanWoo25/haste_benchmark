@@ -2,6 +2,7 @@
 // ETH Zurich, Vision for Robotics Lab.
 
 #include <glog/logging.h>
+#include <cstdio>
 
 namespace haste {
 auto RpgDataset::countLinesInFile(std::ifstream& file) -> size_t{
@@ -15,7 +16,12 @@ auto RpgDataset::countLinesInFile(std::ifstream& file) -> size_t{
 }
 
 template<typename Event>
-auto RpgDataset::loadEvents(const std::string& file_path, std::vector<Event>& events, size_t num_events) -> bool {
+auto RpgDataset::loadEvents(
+  const std::string& file_path,
+  std::vector<Event>& events,
+  size_t num_events)
+  -> bool
+{
   LOG(INFO) << "Loading Events File (Format: t x y p) from file " << file_path << " ...";
   std::ifstream file(file_path);
   if (file.fail()) {
@@ -36,6 +42,49 @@ auto RpgDataset::loadEvents(const std::string& file_path, std::vector<Event>& ev
     file >> t >> x >> y >> p;
 
     events.template emplace_back(Event{.t = t, .x = x, .y = y, .p = p});
+  }
+
+  file.close();
+  LOG(INFO) << "Successfully loaded  " << events.size() << " events.";
+  return true;
+}
+
+template<typename Event>
+auto RpgDataset::loadBinEvents(
+  const std::string & file_path,
+  std::vector<Event>& events)
+  -> bool
+{
+  LOG(INFO) << "[loadBinEvents] Loading Events File (Format: t x y p) from file " << file_path << " ...";
+  std::ifstream file(file_path);
+  if (file.fail() || !file.good()) {
+    LOG(ERROR) << "Error opening file. " << file_path;
+    return false;
+  }
+
+  events.clear();
+  uint64_t buffer_;
+  const uint64_t mask_t = (1UL << 38) - 1UL;
+  const uint64_t mask_x = (1UL << 12) - 1UL;
+  const uint64_t mask_y = (1UL << 12) - 1UL;
+  const uint64_t mask_p = (1UL <<  1) - 1UL;
+
+  // char buffer[100]{};
+
+  while (!file.eof())
+  {
+    file.read(reinterpret_cast<char*>(&buffer_), sizeof(buffer_));
+    const auto t = (buffer_ >> 26) & mask_t;
+    const auto x = (buffer_ >> 14) & mask_x;
+    const auto y = (buffer_ >>  2) & mask_y;
+    const auto p = (buffer_ >>  1) & mask_p;
+    const auto tn = static_cast<double>(t) / 1000000.0;
+    const auto xn = static_cast<float>(x);
+    const auto yn = static_cast<float>(y);
+    const auto pn = static_cast<bool>(p);
+    // sprintf(buffer, "to t: %.6f, x: %.2f, y: %.2f, p: %d", tn, xn, yn, pn);
+    // LOG_EVERY_N(INFO, 500000) << std::string(buffer);
+    events.template emplace_back(Event{.t = tn, .x = xn, .y = yn, .p = pn});
   }
 
   file.close();

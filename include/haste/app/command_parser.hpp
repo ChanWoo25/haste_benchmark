@@ -55,10 +55,18 @@ const auto kWelcomeMessage =
 /// Parse command line and load events from specified file.
 auto parseEvents() -> std::vector<Event> {
   std::vector<Event> events;
-  if (!google::GetCommandLineFlagInfoOrDie("events_file").is_default) {
-    if (!google::GetCommandLineFlagInfoOrDie("num_events").is_default) {
+  if (!google::GetCommandLineFlagInfoOrDie("events_file").is_default)
+  {
+    if (std::string(FLAGS_events_file).rfind(".bin") != std::string::npos)
+    {
+      haste::RpgDataset::loadBinEvents(FLAGS_events_file, events);
+    }
+    else if (!google::GetCommandLineFlagInfoOrDie("num_events").is_default)
+    {
       haste::RpgDataset::loadEvents(FLAGS_events_file, events, FLAGS_num_events);
-    } else {
+    }
+    else
+    {
       haste::RpgDataset::loadEvents(FLAGS_events_file, events);
     }
   } else {
@@ -98,14 +106,21 @@ auto parseCameraCalibration(Camera& camera) -> bool {
 /// Parse command line and generate tracker seed(s) from file or directly from command line.
 auto parseTrackerSeeds() -> std::vector<TrackerState> {
   std::vector<TrackerState> seeds;
-  if (!((google::GetCommandLineFlagInfoOrDie("seed").is_default)
-        ^ (google::GetCommandLineFlagInfoOrDie("seeds_file").is_default))) {// Check incompatibilities.
-    LOG(FATAL) << "You must define either a single tracker seed (--seed=t,x,y,theta) or a file of tracker seeds "
-                  "(--seeds_file=path/to/file).";
-  } else if (!google::GetCommandLineFlagInfoOrDie("seed").is_default) {// Single seed.
+  if (!(   (google::GetCommandLineFlagInfoOrDie("seed").is_default)
+         ^ (google::GetCommandLineFlagInfoOrDie("seeds_file").is_default)))
+  { // Check incompatibilities.
+    LOG(FATAL)
+      << "You must define either a single tracker seed "
+      << "(--seed=t,x,y,theta) or a file of tracker seeds "
+      << "(--seeds_file=path/to/file).";
+  }
+  else if (!google::GetCommandLineFlagInfoOrDie("seed").is_default)
+  { // Single seed.
     seeds.push_back(getTrackerStateFromString(FLAGS_seed));
     LOG(INFO) << "Single seed loaded from command line --seed=" << FLAGS_seed;
-  } else if (!google::GetCommandLineFlagInfoOrDie("seeds_file").is_default) {// Multiple seeds from file.
+  }
+  else if (!google::GetCommandLineFlagInfoOrDie("seeds_file").is_default)
+  { // Multiple seeds from file.
     seeds = getTrackerStatesFromFile(FLAGS_seeds_file);
   }
   return seeds;

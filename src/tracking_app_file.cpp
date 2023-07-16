@@ -2,6 +2,8 @@
 // ETH Zurich, Vision for Robotics Lab.
 
 #include "haste/app_file.hpp"
+#include <cstdlib>
+#include <cstdio>
 
 using namespace haste::app;
 
@@ -78,19 +80,25 @@ int main(int argc, char** argv) {
   CHECK(!events.empty()) << "No events are loaded.";
 
   // Camera
+  // char buffer[100]{};
   auto camera = parser::parseCamera();
   if (parser::parseCameraCalibration(camera)) {
     // Preprocessing: undistort events' location.
     LOG(INFO) << "Applying undistortion to events as a preprocessing step.";
     auto undistortion_map =
-        camera.createUndistortionMap();// This undistort mapping could alternatively be used during an online process
-    std::for_each(events.begin(), events.end(), [&undistortion_map](Event& event) {
+        camera.createUndistortionMap(); // This undistort mapping could alternatively be used during an online process
+    std::for_each(events.begin(), events.end(), [&undistortion_map](Event& event)
+    {
+      // sprintf(buffer, "t: %.6f, x: %2f, y: %2f, p: %d", event.t, event.x, event.y, event.p);
+      // LOG_EVERY_N(INFO, 100000) << std::string(buffer);
       std::tie(event.x, event.y) = undistortion_map(event.x, event.y);
     });
   }
+  LOG(INFO) << "Success undistortion .";
 
   // Load tracker seed(s).
   auto seeds = parser::parseTrackerSeeds();
+  LOG(INFO) << "Success parse seeds .";
 
   // Stopping condition: track until feature leave the FOV.
   constexpr auto kRemovalMargin = Tracker::kPatchSizeHalf;

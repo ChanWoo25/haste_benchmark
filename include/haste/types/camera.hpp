@@ -20,7 +20,7 @@ struct PinholeRadTanCamera {
 
   struct UndistortionMap {
    public:
-    UndistortionMap(const PinholeRadTanCamera &camera);
+    UndistortionMap(const PinholeRadTanCamera & camera);
     inline auto operator()(const int &x, const int &y) const -> std::pair<Scalar, Scalar>;
    private:
     Eigen::Array<Vector2, -1, -1> data_;
