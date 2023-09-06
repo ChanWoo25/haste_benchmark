@@ -4,6 +4,7 @@
 #pragma once
 
 #include <memory>
+#include <cstdlib>
 
 #include "haste/aux/aux.hpp"
 #include "haste/tracking.hpp"
@@ -97,7 +98,10 @@ auto getTrackerStatesFromFile(const std::string& file_path) -> std::vector<Track
 }
 
 /// Write a vector of tracker states to a file.
-auto writeTrackerStates(const std::vector<TrackerState>& states, const std::string& file_path) -> void {
+void writeTrackerStates(
+  const std::vector<TrackerState> & states,
+  const std::string & file_path)
+{
   LOG(INFO) << "Writing tracking states (Format: t,x,y,theta,id) in file " << file_path << " ...";
   std::ofstream file(file_path);
   if (file.fail()) { LOG(ERROR) << "Error opening file. " << file_path; }
@@ -107,6 +111,29 @@ auto writeTrackerStates(const std::vector<TrackerState>& states, const std::stri
     file << state.t << "," << state.x << "," << state.y << "," << state.theta << "," << state.id << "\n";
   }
   file.close();
+  LOG(INFO) << "Successfully written " << states.size() << " states.";
+}
+
+/// Write a vector of tracker states to a file.
+void writeTrackerStatesPerIndex(
+  const std::vector<TrackerState> & states,
+  const std::string & save_dir)
+{
+  LOG(INFO) << "Writing tracking states (Format: t,x,y,theta,id) in directory " << save_dir << " ...";
+  const auto traj_dir = save_dir + "/traj";
+  system(std::string("mkdir -p " + traj_dir).c_str());
+  std::ofstream outfile;
+  for (const auto & state : states)
+  {
+    const auto file_fn = traj_dir + std::to_string(state.id) + ".csv";
+    outfile.open(file_fn, std::ios_base::app);
+    outfile << std::fixed << std::showpoint;
+    outfile << state.t << ","
+            << state.x << ","
+            << state.y << ","
+            << state.theta << "\n";
+    outfile.close();
+  }
   LOG(INFO) << "Successfully written " << states.size() << " states.";
 }
 

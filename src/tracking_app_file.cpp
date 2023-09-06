@@ -75,6 +75,28 @@ int main(int argc, char** argv) {
   }
   LOG(INFO) << parser::kWelcomeMessage;
 
+  /* Output dir check */
+  const bool is_recording
+    = (!FLAGS_output_file.empty()) || (!FLAGS_output_dir.empty());
+  if (is_recording)
+  {
+    CHECK(FLAGS_output_file.empty() ^ FLAGS_output_dir.empty());
+    if (!FLAGS_output_file.empty())
+    {
+      LOG(INFO) << "[main] LOG File is '" << FLAGS_output_file << "'";
+      const auto found = FLAGS_output_file.find_last_of("/");
+      const auto parent_dir = FLAGS_output_file.substr(0, found);
+      const auto command = std::string("mkdir -p ") + parent_dir;
+      system(command.c_str());
+    }
+    else if (!FLAGS_output_dir.empty())
+    {
+      LOG(INFO) << "[main] LOG Dir is '" << FLAGS_output_dir << "'";
+      const auto traj_dir = FLAGS_output_dir + "/traj";
+      system(std::string("mkdir -p " + traj_dir).c_str());
+    }
+  }
+
   // Events
   auto events = parser::parseEvents();
   CHECK(!events.empty()) << "No events are loaded.";
@@ -118,18 +140,8 @@ int main(int argc, char** argv) {
   benchmark::TimingBenchmark benchmark;
   // Set recording vector.
   std::vector<TrackerState> states_recorded;
-  const bool is_recording = !google::GetCommandLineFlagInfoOrDie("output_file").is_default;
-  if (is_recording)
-  {
-    const auto found = FLAGS_output_file.find_last_of("/");
-    const auto parent_dir = FLAGS_output_file.substr(0, found);
-    const auto command = std::string("mkdir -p ") + parent_dir;
-    system(command.c_str());
-    LOG(INFO) << "Command: " << command;
-  }
-
   // Tracking from seed(s).
-  for (const auto& seed : seeds) {
+  for (const auto & seed : seeds) {
     LOG(INFO) << "Starting Tracker #" << seed.id << " with seed "
               << "{t = " << seed.t << ", x = " << seed.x << ", y = " << seed.y << ", theta = " << seed.theta << "}.";
 
@@ -182,16 +194,33 @@ int main(int argc, char** argv) {
     }
   }
 
-  if (is_recording) { writeTrackerStates(states_recorded, FLAGS_output_file); }
+  if (is_recording)
+  {
+    CHECK(FLAGS_output_file.empty() ^ FLAGS_output_dir.empty());
+    if (!FLAGS_output_file.empty())
+    {
+      writeTrackerStates(
+        states_recorded,
+        FLAGS_output_file);
+    }
+    else if (!FLAGS_output_dir.empty())
+    {
+      writeTrackerStatesPerIndex(
+        states_recorded,
+        FLAGS_output_dir);
+    }
+  }
 
-  if (is_recording) {
+  if (is_recording)
+  {
     LOG(WARNING)
         << "** WARNING ** Intermediate tracking states have been recorded to file (--output_file=path/to/file). "
-           "Following timing results might be inaccurate.";
+        << "Following timing results might be inaccurate.";
   }
-  if (FLAGS_visualize) {
+  if (FLAGS_visualize)
+  {
     LOG(WARNING) << "** WARNING ** Internal tracking states have been visualized (--visualize=true). "
-                    "Following timing results might be inaccurate.";
+                 << "Following timing results might be inaccurate.";
   }
 
   LOG(INFO) << benchmark.fullReport();
